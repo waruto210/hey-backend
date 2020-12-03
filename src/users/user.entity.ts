@@ -3,11 +3,14 @@ import {
   Column,
   PrimaryGeneratedColumn,
   BeforeInsert,
+  OneToOne,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { UserRO } from './uset.dto';
+import { UserRO } from './user.dto';
+import { OrderEntity } from 'src/order/order.entity';
 
 @Entity('user')
 export class UserEntity {
@@ -35,6 +38,12 @@ export class UserEntity {
   })
   name: string;
 
+  @Column({
+    type: 'text',
+    default: '身份证',
+  })
+  identityType: string;
+
   @Column('text')
   identity: string;
 
@@ -42,7 +51,7 @@ export class UserEntity {
   phone: string;
 
   @Column({
-    type: 'integer',
+    type: 'int',
     default: 0,
   })
   level: number;
@@ -51,7 +60,7 @@ export class UserEntity {
     type: 'text',
     default: '这个人很懒，什么也没留下',
   })
-  profile: string;
+  description: string;
 
   @Column('text')
   city: string;
@@ -62,18 +71,43 @@ export class UserEntity {
   @UpdateDateColumn()
   updated: Date;
 
+  @OneToMany(
+    () => OrderEntity,
+    order => order.user,
+  )
+  orders: OrderEntity[];
+
   @BeforeInsert()
   async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);
   }
 
-  async comparePassword(attempt: string) {
-    return await bcrypt.compare(attempt, this.password);
-  }
-
   toResponseObject(): UserRO {
-    const { id, username } = this;
-    const responseObject: any = { id, username };
+    const levels = ['一般', '重要', '钻石'];
+    const {
+      id,
+      username,
+      name,
+      identityType,
+      identity,
+      phone,
+      level,
+      description,
+      city,
+    } = this;
+    const responseObject: any = {
+      id,
+      username,
+      name,
+      identityType,
+      identity,
+      phone,
+      level,
+      description,
+      city,
+    };
+    responseObject.level = levels[responseObject.level];
+
     return responseObject;
   }
 }

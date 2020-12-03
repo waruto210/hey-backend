@@ -1,6 +1,6 @@
 import { Controller, Post, UseGuards, Request, Body } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
-import { UserDTO } from 'src/users/uset.dto';
+import { UserDTO } from 'src/users/user.dto';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 
