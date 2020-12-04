@@ -59,10 +59,9 @@ export class OrderService {
     return order.toResponseObject();
   }
 
-  async update(data: Partial<OrderDTO>) {
-    const { id } = data;
-    await this.orderRepository.update({ id }, data);
-    let order = await this.orderRepository.findOne({ id });
+  async update(orderId, data: Partial<OrderDTO>) {
+    await this.orderRepository.update({ id: orderId }, data);
+    let order = await this.orderRepository.findOne({ id: orderId });
     order = await this.sigeUrl(order);
     return order.toResponseObject();
   }
@@ -73,5 +72,14 @@ export class OrderService {
 
     orders = await Promise.all(orders.map(order => this.sigeUrl(order)));
     return orders.map(order => order.toResponseObject());
+  }
+
+  async delete(orderId: string) {
+    const order = await this.orderRepository.findOne({ id: orderId });
+    if (!order) {
+      throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
+    }
+    await this.orderRepository.delete({ id: orderId });
+    return order.toResponseObject();
   }
 }

@@ -11,6 +11,8 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { UserRO } from './user.dto';
 import { OrderEntity } from 'src/order/order.entity';
+import { OrderReqEntity } from 'src/order/orderreq.entity';
+import { OrderSucEntity } from 'src/order/ordersuc.entity';
 
 @Entity('user')
 export class UserEntity {
@@ -76,6 +78,24 @@ export class UserEntity {
     order => order.user,
   )
   orders: OrderEntity[];
+
+  @OneToMany(
+    () => OrderReqEntity,
+    orderReq => orderReq.user,
+  )
+  orderReqs: OrderReqEntity[];
+
+  @OneToMany(
+    () => OrderSucEntity,
+    orderSuc => orderSuc.userReq,
+  )
+  orderReqSucs: OrderSucEntity[];
+
+  @OneToMany(
+    () => OrderSucEntity,
+    orderSuc => orderSuc.userOwn,
+  )
+  orderOwnSucs: OrderSucEntity[];
 
   @BeforeInsert()
   async hashPassword() {

@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -12,6 +13,7 @@ import { OrderRO } from './order.dto';
 import Minio = require('minio');
 import 'dotenv/config';
 import { Logger } from '@nestjs/common';
+import { OrderReqEntity } from './orderreq.entity';
 
 @Entity('order')
 export class OrderEntity {
@@ -53,6 +55,12 @@ export class OrderEntity {
     default: 0,
   })
   state: number;
+
+  @OneToMany(
+    () => OrderReqEntity,
+    orderReq => orderReq.order,
+  )
+  req: OrderReqEntity;
 
   toResponseObject() {
     const states = ['待响应', '已完成', '已取消', '到期未达成'];
