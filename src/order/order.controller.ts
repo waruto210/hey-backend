@@ -24,7 +24,7 @@ export class OrderController {
 
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('picture'))
-  @Post('order-owner')
+  @Post('order')
   async pubOrder(
     @UploadedFile() file,
     @User('id') userId: string,
@@ -34,26 +34,26 @@ export class OrderController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put('order-owner')
+  @Put('order')
   async updateOrder(@Param('id') orderId, @Body() data: OrderDTO) {
     Logger.log(`data is ${data.type}`, 'Order');
     return await this.orderService.update(orderId, data);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('order-owner')
+  @Get('order')
   async showOrders(@User('id') userId: string) {
     return await this.orderService.showAll(userId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('order-owner')
+  @Delete('order')
   async deleteOrder(@Param('id') orderId: string) {
     return await this.orderService.delete(orderId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('order-receiver')
+  @Get('orderreq')
   async showAllOrders() {
     return await this.orderService.showAll('');
   }

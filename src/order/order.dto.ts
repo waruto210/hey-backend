@@ -18,4 +18,6 @@ export class OrderRO {
   created: Date;
   updated: Date;
   state: string;
+  reqs: number;
+  modify: boolean;
 }
