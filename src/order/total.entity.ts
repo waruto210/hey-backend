@@ -1,11 +1,16 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('total')
 export class TotalEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('date')
+  @UpdateDateColumn()
   date: Date;
 
   @Column('text')
@@ -14,9 +19,15 @@ export class TotalEntity {
   @Column('text')
   type: string;
 
-  @Column('int')
+  @Column({
+    type: 'int',
+    default: 0,
+  })
   count: number;
 
-  @Column('int')
+  @Column({
+    type: 'int',
+    default: 0,
+  })
   income: number;
 }

@@ -3,6 +3,7 @@ import { User } from 'src/users/users.service';
 import {
   Column,
   Entity,
+  ManyToMany,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -14,30 +15,30 @@ export class OrderSucEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(
+  @ManyToOne(
     () => OrderReqEntity,
     orderReq => orderReq.orderSuc,
   )
-  orderReq: OrderReqEntity;
+  req: OrderReqEntity;
 
   @ManyToOne(
     () => UserEntity,
-    user => user.orderReqSucs,
+    user => user.reqOrderSucs,
   )
-  userReq: UserEntity;
+  reqUser: UserEntity;
 
   @ManyToOne(
     () => UserEntity,
-    user => user.orderOwnSucs,
+    user => user.ownOrderSucs,
   )
-  userOwn: UserEntity;
+  owner: UserEntity;
 
   @Column('date')
   finishDate: Date;
 
   @Column('int')
-  ownerPay: number;
+  pay: number;
 
   @Column('int')
-  reqPay: number;
+  commission: number;
 }

@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -35,7 +36,7 @@ export class OrderController {
 
   @UseGuards(JwtAuthGuard)
   @Put('order')
-  async updateOrder(@Param('id') orderId, @Body() data: OrderDTO) {
+  async updateOrder(@Query('id') orderId, @Body() data: Partial<OrderDTO>) {
     Logger.log(`data is ${data.type}`, 'Order');
     return await this.orderService.update(orderId, data);
   }
@@ -48,8 +49,25 @@ export class OrderController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('order')
-  async deleteOrder(@Param('id') orderId: string) {
-    return await this.orderService.delete(orderId);
+  async deleteOrder(@Query('id') orderId: string) {
+    return await this.orderService.deleteOrder(orderId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('handlereq')
+  async getOrderReq(@Query('id') orderId: string) {
+    // Logger.log(`orderId is ${orderId}`, 'handlereq');
+    return await this.orderService.fetchOrderReqs(orderId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('handlereq')
+  async handlereq(
+    @Query('orderid') orderId: string,
+    @Query('reqid') reqId: string,
+    @Body('agree') agree: boolean,
+  ) {
+    return await this.orderService.handleOrderReq(orderId, reqId, agree);
   }
 
   @UseGuards(JwtAuthGuard)
