@@ -25,7 +25,7 @@ export class OrderService {
     secretKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
   });
 
-  async sigeUrl(order: OrderEntity) {
+  async signUrl(order: OrderEntity) {
     order.picture = await this.minioClient.presignedUrl(
       'GET',
       process.env.BUCKET,
@@ -55,22 +55,27 @@ export class OrderService {
       user: user,
     });
     order = await this.orderRepository.save(order);
-    order = await this.sigeUrl(order);
+    order = await this.signUrl(order);
     return order.toResponseObject();
   }
 
   async update(orderId, data: Partial<OrderDTO>) {
     await this.orderRepository.update({ id: orderId }, data);
     let order = await this.orderRepository.findOne({ id: orderId });
-    order = await this.sigeUrl(order);
+    order = await this.signUrl(order);
     return order.toResponseObject();
   }
 
   async showAll(userId: string): Promise<OrderRO[]> {
-    const user = await this.usersRepository.findOne({ id: userId });
-    let orders = await this.orderRepository.find({ user: user });
+    let orders;
+    if (userId !== '') {
+      const user = await this.usersRepository.findOne({ id: userId });
+      orders = await this.orderRepository.find({ user: user });
+    } else {
+      orders = await this.orderRepository.find();
+    }
 
-    orders = await Promise.all(orders.map(order => this.sigeUrl(order)));
+    orders = await Promise.all(orders.map(order => this.signUrl(order)));
     return orders.map(order => order.toResponseObject());
   }
 
