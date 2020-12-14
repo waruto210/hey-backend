@@ -25,7 +25,7 @@ export class OrderService {
     secretKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
   });
 
-  async signUrl(order: OrderEntity) {
+  async signUrl(order: OrderEntity): Promise<UserEntity | any> {
     order.picture = await this.minioClient.presignedUrl(
       'GET',
       process.env.BUCKET,
@@ -60,8 +60,18 @@ export class OrderService {
   }
 
   async update(orderId, data: Partial<OrderDTO>) {
+    let order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['req'],
+    });
+    if (order.req.length > 0) {
+      throw new HttpException(
+        'Order already has reqs!',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     await this.orderRepository.update({ id: orderId }, data);
-    let order = await this.orderRepository.findOne({ id: orderId });
+    order = await this.orderRepository.findOne({ id: orderId });
     order = await this.signUrl(order);
     return order.toResponseObject();
   }
@@ -70,9 +80,12 @@ export class OrderService {
     let orders;
     if (userId !== '') {
       const user = await this.usersRepository.findOne({ id: userId });
-      orders = await this.orderRepository.find({ user: user });
+      orders = await this.orderRepository.find({
+        where: { user: user },
+        relations: ['req'],
+      });
     } else {
-      orders = await this.orderRepository.find();
+      orders = await this.orderRepository.find({ relations: ['req'] });
     }
 
     orders = await Promise.all(orders.map(order => this.signUrl(order)));

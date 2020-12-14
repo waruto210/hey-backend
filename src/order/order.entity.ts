@@ -60,7 +60,7 @@ export class OrderEntity {
     () => OrderReqEntity,
     orderReq => orderReq.order,
   )
-  req: OrderReqEntity;
+  req: OrderReqEntity[];
 
   toResponseObject() {
     const states = ['待响应', '已完成', '已取消', '到期未达成'];
@@ -75,7 +75,10 @@ export class OrderEntity {
       created,
       updated,
       state,
+      req,
     } = this;
+    const reqs = req.length;
+    const modify = reqs == 0;
     const resObj: any = {
       id,
       type,
@@ -87,6 +90,8 @@ export class OrderEntity {
       created,
       updated,
       state,
+      reqs,
+      modify,
     };
     resObj.state = states[resObj.state];
     return resObj;
