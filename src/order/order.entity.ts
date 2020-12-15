@@ -72,6 +72,7 @@ export class OrderEntity {
     const states = ['待响应', '已完成', '已取消', '到期未达成'];
     const {
       id,
+      owner,
       type,
       name,
       description,
@@ -81,14 +82,8 @@ export class OrderEntity {
       created,
       updated,
       state,
-      reqs: req,
+      commit,
     } = this;
-    let reqs = 0;
-    if (req.length) {
-      reqs = req.length;
-    }
-
-    const modify = reqs == 0;
     const resObj: any = {
       id,
       type,
@@ -100,8 +95,13 @@ export class OrderEntity {
       created,
       updated,
       state,
+      commit,
     };
+    if (owner) {
+      resObj.owner = owner.toResponseObject(false);
+    }
     resObj.state = states[resObj.state];
+    // Logger.log(`resObj is ${owner}`, 'heer');
     return resObj;
   }
 }

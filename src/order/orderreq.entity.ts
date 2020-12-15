@@ -53,17 +53,16 @@ export class OrderReqEntity {
 
   toResponseObject() {
     const states = ['待处理', '同意', '拒绝', '取消'];
-    const { id, reqUser: user, description, state } = this;
-    let username = '';
-    if (user.username) {
-      username = user.username;
-    }
+    const { id, reqUser: reqUser, description, state } = this;
+
     const resObj: any = {
       id,
-      username,
       description,
       state,
     };
+    if (reqUser) {
+      resObj.requser = reqUser.toResponseObject(false);
+    }
     resObj.state = states[resObj.state];
     return resObj;
   }

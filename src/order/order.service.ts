@@ -13,6 +13,8 @@ import { OrderReqEntity } from './orderreq.entity';
 import { OrderSucEntity } from './ordersuc.entity';
 import { TotalEntity } from './total.entity';
 import { use } from 'passport';
+import { OrderConDto, OrderReqConDto } from 'src/admin/search.dto';
+import { from } from 'rxjs';
 
 @Injectable()
 export class OrderService {
@@ -45,6 +47,17 @@ export class OrderService {
     return order;
   }
 
+  async checkOrderState(orders: OrderEntity[]) {
+    const now = new Date();
+    for (const order of orders) {
+      if (order.deadline <= now) {
+        order.state = 3;
+        await this.orderRepository.save(order);
+      }
+    }
+    return orders;
+  }
+
   async add(userId: string, file, data: Partial<OrderDTO>) {
     const user = await this.usersRepository.findOne({ id: userId });
     if (!(await this.minioClient.bucketExists(process.env.BUCKET))) {
@@ -69,8 +82,9 @@ export class OrderService {
     order = await this.orderRepository.save(order);
     order = await this.orderRepository.findOne({
       where: { id: order.id },
-      relations: ['reqs'],
+      relations: ['owner'],
     });
+    // Logger.log(`order.owner is owner ${order.owner}`, 's');
     order = await this.signUrl(order);
     return order.toResponseObject();
   }
@@ -78,7 +92,6 @@ export class OrderService {
   async update(orderId: string, data: Partial<OrderDTO>) {
     let order = await this.orderRepository.findOne({
       where: { id: orderId },
-      relations: ['reqs'],
     });
     if (!order) {
       throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
@@ -92,36 +105,68 @@ export class OrderService {
     await this.orderRepository.update({ id: orderId }, data);
     order = await this.orderRepository.findOne({
       where: { id: orderId },
-      relations: ['reqs'],
     });
     order = await this.signUrl(order);
     return order.toResponseObject();
   }
 
-  async showAll(userId: string): Promise<OrderRO[]> {
+  async showAllOrders(userId: string): Promise<OrderRO[]> {
     let orders: OrderEntity[];
     if (userId !== '') {
       const user = await this.usersRepository.findOne({ id: userId });
       orders = await this.orderRepository.find({
         where: { owner: user },
-        relations: ['reqs'],
       });
     } else {
       // 接令者查看，只给看待接的
       orders = await this.orderRepository.find({
         where: { state: 0 },
-        relations: ['reqs'],
       });
     }
-
+    orders = await this.checkOrderState(orders);
     orders = await Promise.all(orders.map(order => this.signUrl(order)));
     return orders.map(order => order.toResponseObject());
+  }
+
+  async searchAllOrders(cond: Partial<OrderConDto>): Promise<OrderRO[]> {
+    let orders = await this.orderRepository.find({ relations: ['owner'] });
+    orders = await this.checkOrderState(orders);
+    if (cond.from) {
+      orders = orders.filter(x => x.created >= cond.from);
+    }
+    if (cond.to) {
+      orders = orders.filter(x => x.created <= cond.to);
+    }
+    if (cond.state) {
+      orders = orders.filter(x => x.state == cond.state);
+    }
+    orders = await Promise.all(orders.map(order => this.signUrl(order)));
+    return orders.map(order => order.toResponseObject());
+  }
+
+  async searchAllOrderReqs(
+    cond: Partial<OrderReqConDto>,
+  ): Promise<OrderReqRo[]> {
+    let orderReqs = await this.orderReqRepository.find({
+      relations: ['reqUser'],
+    });
+
+    if (cond.from) {
+      orderReqs = orderReqs.filter(x => x.created >= cond.from);
+    }
+    if (cond.to) {
+      orderReqs = orderReqs.filter(x => x.created <= cond.to);
+    }
+    if (cond.state) {
+      orderReqs = orderReqs.filter(x => x.state == cond.state);
+    }
+
+    return orderReqs.map(order => order.toResponseObject());
   }
 
   async deleteOrder(orderId: string) {
     let order = await this.orderRepository.findOne({
       where: { id: orderId },
-      relations: ['reqs'],
     });
     if (!order) {
       throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
