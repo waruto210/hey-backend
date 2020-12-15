@@ -314,4 +314,43 @@ export class OrderService {
     });
     return orderReq.toResponseObject();
   }
+
+  async updateOrderReq(id: string, data: Partial<OrderReqDTO>) {
+    let orderReq = await this.orderReqRepository.findOne({
+      where: { id: id },
+    });
+    if (!orderReq) {
+      throw new HttpException('OrderReq do not exist', HttpStatus.BAD_REQUEST);
+    }
+    if ((orderReq.state! = 0)) {
+      throw new HttpException(
+        'OrderReq already has been handled!',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    await this.orderReqRepository.update({ id: id }, data);
+    orderReq = await this.orderReqRepository.findOne({
+      where: { id: id },
+      relations: ['reqUser'],
+    });
+    return orderReq;
+  }
+
+  async deleteOrderReq(id: string) {
+    let orderReq = await this.orderReqRepository.findOne({
+      where: { id: id },
+    });
+    if (!orderReq) {
+      throw new HttpException('OrderReq do not exist', HttpStatus.BAD_REQUEST);
+    }
+    if ((orderReq.state! = 0)) {
+      throw new HttpException(
+        'OrderReq already has been handled!',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    orderReq = await this.orderReqRepository.findOne({ id: id });
+    await this.orderReqRepository.delete({ id: id });
+    return;
+  }
 }
