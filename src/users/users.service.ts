@@ -34,18 +34,22 @@ export class UsersService {
     return user;
   }
 
-  async update(userId, data: Partial<ProfileDTO>): Promise<UserRO> {
-    let user = await this.userRepository.findOne({ where: { id: userId } });
+  async update(username, data: Partial<ProfileDTO>): Promise<UserRO> {
+    let user = await this.userRepository.findOne({
+      where: { username: username },
+    });
     if (!user) {
       throw new HttpException('User do not exists', HttpStatus.BAD_REQUEST);
     }
-    await this.userRepository.update({ id: userId }, data);
-    user = await this.userRepository.findOne({ id: userId });
+    await this.userRepository.update({ username: username }, data);
+    user = await this.userRepository.findOne({ username: username });
     return user.toResponseObject();
   }
 
-  async findOne(userId, showId = true): Promise<UserRO> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+  async findOne(username, showId = true): Promise<UserRO> {
+    const user = await this.userRepository.findOne({
+      where: { username: username },
+    });
     if (!user) {
       throw new HttpException('User do not exists', HttpStatus.BAD_REQUEST);
     }

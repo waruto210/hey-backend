@@ -9,19 +9,19 @@ export class OrderSucEntity {
 
   @ManyToOne(
     () => OrderReqEntity,
-    orderReq => orderReq.orderSuc,
+    orderReq => orderReq.missionSuc,
   )
-  req: OrderReqEntity;
+  application: OrderReqEntity;
 
   @ManyToOne(
     () => UserEntity,
-    user => user.reqOrderSucs,
+    user => user.missionApSucs,
   )
-  reqUser: UserEntity;
+  apUser: UserEntity;
 
   @ManyToOne(
     () => UserEntity,
-    user => user.ownOrderSucs,
+    user => user.missionOwnSucs,
   )
   owner: UserEntity;
 

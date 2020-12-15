@@ -1,19 +1,19 @@
 import { UserRO } from 'src/users/user.dto';
 
-export class OrderDTO {
+export class MissionDTO {
   type: string;
-  name: string;
+  title: string;
   description: string;
   picture: string;
   people: number;
   deadline: Date;
 }
 
-export class OrderRO {
+export class MissionRO {
   id: string;
   owner: UserRO;
   type: string;
-  name: string;
+  title: string;
   description: string;
   people: number;
   deadline: Date;
@@ -22,9 +22,5 @@ export class OrderRO {
   updated: Date;
   state: string;
   commit: number;
-}
-
-export class OrderReqDTO {
-  orderId: string;
-  description: string;
+  isOwner: boolean;
 }

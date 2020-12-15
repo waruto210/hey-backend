@@ -18,15 +18,15 @@ export class OrderReqEntity {
 
   @ManyToOne(
     () => OrderEntity,
-    order => order.reqs,
+    order => order.applications,
   )
-  order: OrderEntity;
+  mission: OrderEntity;
 
   @ManyToOne(
     () => UserEntity,
-    user => user.reqOrders,
+    user => user.missionAps,
   )
-  reqUser: UserEntity;
+  apUser: UserEntity;
 
   @Column('text')
   description: string;
@@ -45,23 +45,24 @@ export class OrderReqEntity {
 
   @OneToOne(
     () => OrderSucEntity,
-    orderSuc => orderSuc.req,
+    orderSuc => orderSuc.application,
   )
-  orderSuc: OrderSucEntity[];
+  missionSuc: OrderSucEntity[];
 
-  toResponseObject() {
+  toResponseObject(isOwner = false) {
     const states = ['待处理', '同意', '拒绝', '取消'];
-    const { id, reqUser: reqUser, description, state } = this;
+    const { id, apUser, description, state } = this;
 
     const resObj: any = {
       id,
       description,
       state,
     };
-    if (reqUser) {
-      resObj.requser = reqUser.toResponseObject(false);
+    if (apUser) {
+      resObj.apUser = apUser.toResponseObject(false);
     }
     resObj.state = states[resObj.state];
+    resObj.isOwner = isOwner;
     return resObj;
   }
 }

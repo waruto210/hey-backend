@@ -3,99 +3,119 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
+  Param,
   Post,
   Put,
   Query,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { User } from 'src/users/users.decorator';
-import { OrderDTO, OrderReqDTO } from './order.dto';
+import { MissionDTO } from './order.dto';
 import { OrderService } from './order.service';
 import 'dotenv/config';
 
-@Controller('api/order')
+@Controller()
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Post('order')
-  async pubOrder(@User('id') userId, @Body() data: OrderDTO) {
-    // Logger.log(`userId is ${userId}`, 's');
-    return await this.orderService.add(userId, data);
+  @Post('api/mission')
+  async pubMission(@User('id') userId: string, @Body() data: MissionDTO) {
+    Logger.log(`userId is ${userId}`, 's');
+    return await this.orderService.addMission(userId, data);
   }
 
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('picture'))
-  @Post('image')
-  async addImage(@UploadedFile() file) {
-    return await this.orderService.addImage(file);
+  @Put('api/mission/:missionId')
+  async updateOrder(
+    @Param('missionId') missionId,
+    @Body() data: Partial<MissionDTO>,
+  ) {
+    return await this.orderService.updateMission(missionId, data);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put('order')
-  async updateOrder(@Query('id') orderId, @Body() data: Partial<OrderDTO>) {
-    // Logger.log(`data is ${data.type}`, 'Order');
-    return await this.orderService.update(orderId, data);
+  @Get('api/mission/:missionId')
+  async showOrders(@User('id') userId, @Param('missionId') missionId) {
+    return await this.orderService.findOneMission(userId, missionId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('order')
-  async showOrders(@User('id') userId: string) {
-    return await this.orderService.showAllOrders(userId);
+  @Delete('api/mission/:missionId')
+  async deleteOrder(@Param('missionId') missionId) {
+    return await this.orderService.deleteMission(missionId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('order')
-  async deleteOrder(@Query('id') orderId: string) {
-    return await this.orderService.deleteOrder(orderId);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('handlereq')
-  async getOrderReq(@Query('id') orderId: string) {
+  @Get('/api/mission/:missionId/applications')
+  async getMissionAps(@Param('missionId') missionId: string) {
     // Logger.log(`orderId is ${orderId}`, 'handlereq');
-    return await this.orderService.fetchOrderReqs(orderId);
+    return await this.orderService.getMissionAps(missionId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('handlereq')
-  async handlereq(
-    @Query('orderid') orderId: string,
-    @Query('reqid') reqId: string,
-    @Query('agree') agree: boolean,
+  @Get('/api/mission/application/:applicationId')
+  async getAp(
+    @User('id') userId,
+    @Param('applicationId') applicationId: string,
   ) {
-    // Logger.log(`agree is ${agree}`, 's');
-    return await this.orderService.handleOrderReq(orderId, reqId, agree);
+    // Logger.log(`orderId is ${orderId}`, 'handlereq');
+    return await this.orderService.getAp(userId, applicationId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('orderreq')
-  async showAllOrders() {
-    return await this.orderService.showAllOrders('');
-  }
-  @UseGuards(JwtAuthGuard)
-  @Post('orderreq')
-  async createOrderReq(@User('id') userId: string, @Body() data: OrderReqDTO) {
-    return await this.orderService.creatOrderReq(userId, data);
+  @Post('/api/mission/application/:applicationId/accept')
+  async acceptAp(@Param('applicationId') applicationId: string) {
+    // Logger.log(`orderId is ${orderId}`, 'handlereq');
+    return await this.orderService.handleAp(applicationId, true);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put('orderreq')
-  async updateOrderReq(
-    @Query('id') id: string,
-    @Body() data: Partial<OrderReqDTO>,
+  @Post('/api/mission/application/:applicationId/decline')
+  async declineAp(@Param('applicationId') applicationId: string) {
+    // Logger.log(`orderId is ${orderId}`, 'handlereq');
+    return await this.orderService.handleAp(applicationId, false);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/api/mission/:missionId/application')
+  async addApplication(
+    @User('id') userId: string,
+    @Param('missionId') missionId: string,
+    @Body('description') description: string,
   ) {
-    //Logger.log(`data is ${data.description}`, 'orderreq');
-    return await this.orderService.updateOrderReq(id, data);
+    Logger.log(`userId is: ${userId}`, 'ss');
+    return await this.orderService.addApplication(
+      userId,
+      missionId,
+      description,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('orderreq')
-  async deleteOrderReq(@Query('id') id: string) {
-    return await this.orderService.deleteOrderReq(id);
+  @Put('/api/mission/:missionId/application/:applicationId')
+  async getApplication(
+    @Param('applicationId') applicationId: string,
+    @Body('description') description: string,
+  ) {
+    return await this.orderService.updateAp(applicationId, description);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('/api/mission/:missionId/application/:applicationId')
+  async deleteApplication(@Param('applicationId') applicationId: string) {
+    return await this.orderService.deleteApplication(applicationId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('api/missions')
+  async searchMission(
+    @Query('owner') owner: string,
+    @Query('type') type: string,
+    @Query('keyword') keyword: string,
+  ) {
+    return await this.orderService.searchAllMissions(owner, type, keyword);
   }
 }

@@ -77,25 +77,25 @@ export class UserEntity {
     () => OrderEntity,
     order => order.owner,
   )
-  orders: OrderEntity[];
+  missions: OrderEntity[];
 
   @OneToMany(
     () => OrderReqEntity,
-    orderReq => orderReq.reqUser,
+    orderReq => orderReq.apUser,
   )
-  reqOrders: OrderReqEntity[];
+  missionAps: OrderReqEntity[];
 
-  @ManyToMany(
+  @OneToMany(
     () => OrderSucEntity,
-    orderSuc => orderSuc.reqUser,
+    orderSuc => orderSuc.apUser,
   )
-  reqOrderSucs: OrderSucEntity[];
+  missionApSucs: OrderSucEntity[];
 
   @OneToMany(
     () => OrderSucEntity,
     orderSuc => orderSuc.owner,
   )
-  ownOrderSucs: OrderSucEntity[];
+  missionOwnSucs: OrderSucEntity[];
 
   @BeforeInsert()
   async hashPassword() {

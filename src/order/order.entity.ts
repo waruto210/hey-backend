@@ -18,7 +18,7 @@ export class OrderEntity {
 
   @ManyToOne(
     () => UserEntity,
-    user => user.orders,
+    user => user.missions,
   )
   owner: UserEntity;
 
@@ -26,7 +26,7 @@ export class OrderEntity {
   type: string;
 
   @Column('text')
-  name: string;
+  title: string;
 
   @Column('text')
   description: string;
@@ -60,17 +60,17 @@ export class OrderEntity {
 
   @OneToMany(
     () => OrderReqEntity,
-    orderReq => orderReq.order,
+    orderReq => orderReq.mission,
   )
-  reqs: OrderReqEntity[];
+  applications: OrderReqEntity[];
 
-  toResponseObject() {
+  toResponseObject(isOwner = false) {
     const states = ['待响应', '已完成', '已取消', '到期未达成'];
     const {
       id,
       owner,
       type,
-      name,
+      title: title,
       description,
       people,
       deadline,
@@ -83,7 +83,7 @@ export class OrderEntity {
     const resObj: any = {
       id,
       type,
-      name,
+      title,
       description,
       people,
       deadline,
@@ -96,6 +96,7 @@ export class OrderEntity {
     if (owner) {
       resObj.owner = owner.toResponseObject(false);
     }
+    resObj.isOwner = isOwner;
     resObj.state = states[resObj.state];
     // Logger.log(`resObj is ${owner}`, 'heer');
     return resObj;

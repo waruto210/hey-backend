@@ -2,16 +2,14 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/users/user.entity';
 import { Repository } from 'typeorm';
-import { OrderDTO, OrderReqDTO, OrderRO } from './order.dto';
+import { MissionDTO, MissionRO } from './order.dto';
 import { OrderEntity } from './order.entity';
-import * as nuid from 'nuid';
-import Minio = require('minio');
 import 'dotenv/config';
 import { OrderReqRo } from './orderreq.dto';
 import { OrderReqEntity } from './orderreq.entity';
 import { OrderSucEntity } from './ordersuc.entity';
 import { TotalEntity } from './total.entity';
-import { OrderCondDto, OrderReqCondDto } from 'src/admin/search.dto';
+import { OrderReqCondDto } from 'src/admin/search.dto';
 
 @Injectable()
 export class OrderService {
@@ -27,24 +25,8 @@ export class OrderService {
     @InjectRepository(TotalEntity)
     private totalRepository: Repository<TotalEntity>,
   ) {}
-  private minioClient = new Minio.Client({
-    endPoint: process.env.ENDPOINT,
-    port: Number(process.env.MINPORT),
-    useSSL: false,
-    accessKey: process.env.ACCESS,
-    secretKey: process.env.SECRET,
-  });
 
-  async signUrl(order: OrderEntity) {
-    order.picture = await this.minioClient.presignedUrl(
-      'GET',
-      process.env.BUCKET,
-      order.picture,
-    );
-    return order;
-  }
-
-  async checkOrderState(orders: OrderEntity[]) {
+  async checkMissionState(orders: OrderEntity[]) {
     // Logger.log(`order state update`, 'ss');
     const now = new Date();
     for (const order of orders) {
@@ -58,30 +40,8 @@ export class OrderService {
     }
     return orders;
   }
-  async addImage(file) {
-    if (!(await this.minioClient.bucketExists(process.env.BUCKET))) {
-      await this.minioClient.makeBucket(process.env.BUCKET, 'cn-north-1');
-    }
-    const filename = `${nuid.next()}.${file.mimetype.split('/')[1]}`;
-    const metaData = { 'Content-Type': file.mimetype };
-    await this.minioClient.putObject(
-      process.env.BUCKET,
-      filename,
-      file.buffer,
-      metaData,
-    );
-    const url =
-      'http://' +
-      process.env.ENDPOINT +
-      ':' +
-      process.env.MINPORT +
-      '/' +
-      process.env.BUCKET +
-      '/' +
-      filename;
-    return { picture: url };
-  }
-  async add(userId: string, data: OrderDTO) {
+
+  async addMission(userId: string, data: MissionDTO): Promise<MissionRO> {
     const user = await this.usersRepository.findOne({ id: userId });
 
     if (new Date(data.deadline) < new Date()) {
@@ -96,19 +56,18 @@ export class OrderService {
       where: { id: order.id },
       relations: ['owner'],
     });
-    // Logger.log(`order.owner is owner ${order.owner}`, 's');
-    // order = await this.signUrl(order);
-    return order.toResponseObject();
+    return order.toResponseObject(true);
   }
 
-  async update(orderId: string, data: Partial<OrderDTO>) {
+  async updateMission(orderId: string, data: Partial<MissionDTO>) {
     let order = await this.orderRepository.findOne({
       where: { id: orderId },
+      relations: ['applications'],
     });
     if (!order) {
       throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
     }
-    if (order.reqs.length > 0) {
+    if (order.applications.length > 0) {
       throw new HttpException(
         'Order already has reqs!',
         HttpStatus.BAD_REQUEST,
@@ -117,12 +76,28 @@ export class OrderService {
     await this.orderRepository.update({ id: orderId }, data);
     order = await this.orderRepository.findOne({
       where: { id: orderId },
+      relations: ['owner'],
     });
-    // order = await this.signUrl(order);
-    return order.toResponseObject();
+    return order.toResponseObject(true);
   }
 
-  async showAllOrders(userId: string): Promise<OrderRO[]> {
+  async findOneMission(userId: string, missionId: string): Promise<MissionRO> {
+    let mission = await this.orderRepository.findOne({
+      where: { id: missionId },
+    });
+    if (!mission) {
+      throw new HttpException('Mission do not exist', HttpStatus.BAD_REQUEST);
+    }
+    await this.checkMissionState([mission])[0];
+    mission = await this.orderRepository.findOne({
+      where: { id: missionId },
+      relations: ['owner'],
+    });
+    const isOwner = mission.owner.id == userId;
+    return mission.toResponseObject(isOwner);
+  }
+
+  async showAllOrders(userId: string): Promise<MissionRO[]> {
     let orders: OrderEntity[];
     if (userId !== '') {
       const user = await this.usersRepository.findOne({ id: userId });
@@ -135,26 +110,28 @@ export class OrderService {
         where: { state: 0 },
       });
     }
-    orders = await this.checkOrderState(orders);
+    orders = await this.checkMissionState(orders);
     // orders = await Promise.all(orders.map(order => this.signUrl(order)));
     return orders.map(order => order.toResponseObject());
   }
 
-  async searchAllOrders(cond: Partial<OrderCondDto>): Promise<OrderRO[]> {
-    const states = ['待响应', '已完成', '已取消', '到期未达成'];
-    let orders = await this.orderRepository.find({ relations: ['owner'] });
-    orders = await this.checkOrderState(orders);
-    if (cond.from) {
-      orders = orders.filter(x => new Date(x.created) >= new Date(cond.from));
+  async searchAllMissions(
+    owner: string,
+    type: string,
+    keyword: string,
+  ): Promise<MissionRO[]> {
+    let missions = await this.orderRepository.find({ relations: ['owner'] });
+    if (owner) {
+      missions = missions.filter(x => x.owner.username == owner);
     }
-    if (cond.to) {
-      orders = orders.filter(x => new Date(x.created) >= new Date(cond.from));
+    if (type) {
+      missions = missions.filter(x => x.type == type);
     }
-    if (cond.state) {
-      orders = orders.filter(x => states[x.state] == cond.state);
+    if (keyword) {
+      missions = missions.filter(x => x.title.indexOf(keyword) != -1);
     }
-    // orders = await Promise.all(orders.map(order => this.signUrl(order)));
-    return orders.map(order => order.toResponseObject());
+
+    return missions.map(x => x.toResponseObject());
   }
 
   async searchAllOrderReqs(
@@ -182,91 +159,118 @@ export class OrderService {
     return orderReqs.map(order => order.toResponseObject());
   }
 
-  async deleteOrder(orderId: string) {
-    const order = await this.orderRepository.findOne({
+  async deleteMission(orderId: string) {
+    let mission = await this.orderRepository.findOne({
       where: { id: orderId },
+      relations: ['applications'],
     });
-    if (!order) {
+    if (!mission) {
       throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
     }
-    if (order.reqs.length > 0) {
+    if (mission.applications.length > 0) {
       throw new HttpException(
         'Order already has reqs!',
         HttpStatus.BAD_REQUEST,
       );
     }
-    order.state = 2;
-
-    await this.orderRepository.save(order);
+    mission.state = 2;
+    await this.orderRepository.save(mission);
+    mission = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
+    return mission.toResponseObject();
   }
 
-  async fetchOrderReqs(orderId: string): Promise<OrderReqRo[]> {
-    const order = await this.orderRepository.findOne({
-      where: { id: orderId },
-      relations: ['reqs'],
+  async getMissionAps(missionId: string): Promise<OrderReqRo[]> {
+    const mission = await this.orderRepository.findOne({
+      where: { id: missionId },
+      relations: ['applications'],
     });
-    if (!order) {
+    if (!mission) {
       throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
     }
-    let reqs = order.reqs;
-    reqs = reqs.filter(x => x.state < 3);
-    const reqsTmp = await Promise.all(
-      reqs.map(
+    const aps = mission.applications;
+    const apsTmp = await Promise.all(
+      aps.map(
         async x =>
           await this.orderReqRepository.findOne({
             where: { id: x.id },
-            relations: ['reqUser'],
+            relations: ['apUser'],
           }),
       ),
     );
-    return reqsTmp.map(x => x.toResponseObject());
+    return apsTmp.map(x => x.toResponseObject());
   }
 
-  async handleOrderReq(orderId: string, reqId: string, agree: boolean) {
-    const order = await this.orderRepository.findOne({
-      where: { id: orderId },
-      relations: ['reqs', 'owner'],
+  async getAp(userId: string, applicationId: string): Promise<OrderReqRo> {
+    const application = await this.orderReqRepository.findOne({
+      where: { id: applicationId },
+      relations: ['apUser'],
     });
-    if (!order) {
-      throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
+    if (!application) {
+      throw new HttpException('application not exist', HttpStatus.BAD_REQUEST);
     }
-    let req = order.reqs.filter(x => x.id == reqId)[0];
-    Logger.log(
-      `agree is ${agree}, ${typeof agree}, ${agree == true}, state is ${
-        req.state
-      }`,
-      's',
-    );
-    if (Boolean(agree) === true) {
-      if (req.state >= 1) {
-        throw new HttpException('Req already handled!', HttpStatus.BAD_REQUEST);
-      }
-      req.state = 1;
-      await this.orderReqRepository.save(req);
+    return application.toResponseObject(application.apUser.id == userId);
+  }
 
-      order.commit += 1;
-      if (order.commit > order.people) {
-        throw new HttpException('Order already finsh!', HttpStatus.BAD_REQUEST);
+  async handleAp(applicationId: string, agree: boolean) {
+    let ap = await this.orderReqRepository.findOne({
+      where: { id: applicationId },
+      relations: ['apUser', 'mission'],
+    });
+    if (!ap) {
+      throw new HttpException(
+        'Application do not exist',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    // Logger.log(
+    //   `agree is ${agree}, ${typeof agree}, ${agree == true}, state is ${
+    //     req.state
+    //   }`,
+    //   's',
+    // );
+    if (agree == true) {
+      if (ap.state >= 1) {
+        throw new HttpException(
+          'Application already handled!',
+          HttpStatus.BAD_REQUEST,
+        );
       }
-      req = await this.orderReqRepository.findOne({
-        where: { id: req.id },
-        relations: ['reqUser'],
+      ap.state = 1;
+
+      const mission = await this.orderRepository.findOne({
+        where: { id: ap.mission.id },
+        relations: ['owner'],
       });
+      mission.commit += 1;
+      if (mission.commit > mission.people) {
+        throw new HttpException(
+          'Mission already finsh!',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      ap = await this.orderReqRepository.save(ap);
+
       const orderSuc = this.orderSucRepository.create({
-        req: req,
-        reqUser: req.reqUser,
-        owner: order.owner,
+        application: ap,
+        apUser: ap.apUser,
+        owner: mission.owner,
         finishDate: new Date(),
         pay: 3,
         commission: 1,
       });
       let total = await this.totalRepository.findOne({
-        where: { city: order.owner.city, type: order.type, date: new Date() },
+        where: {
+          city: mission.owner.city,
+          type: mission.type,
+          date: new Date(),
+        },
       });
       if (!total) {
         total = this.totalRepository.create({
-          city: order.owner.city,
-          type: order.type,
+          city: mission.owner.city,
+          type: mission.type,
           date: new Date(),
           count: 0,
           income: 0,
@@ -277,22 +281,22 @@ export class OrderService {
       await this.totalRepository.save(total);
       // 任务完成
       await this.orderSucRepository.save(orderSuc);
-      if (order.commit == order.people) {
+      if (mission.commit == mission.people) {
         // 召集令完成
-        order.state = 1;
+        mission.state = 1;
       }
-      await this.orderRepository.save(order);
+      await this.orderRepository.save(mission);
 
       return orderSuc;
     } else {
-      req.state = 2;
-      await this.orderReqRepository.save(req);
+      ap.state = 2;
+      await this.orderReqRepository.save(ap);
     }
   }
 
-  async creatOrderReq(userId: string, data: OrderReqDTO) {
+  async addApplication(userId: string, missionId: string, description: string) {
     const order = await this.orderRepository.findOne({
-      where: { id: data.orderId },
+      where: { id: missionId },
     });
     if (!order) {
       throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
@@ -301,55 +305,62 @@ export class OrderService {
     if (!user) {
       throw new HttpException('User do not exist', HttpStatus.BAD_REQUEST);
     }
-    let orderReq = this.orderReqRepository.create({
-      order: order,
-      description: data.description,
-      reqUser: user,
+    let application = this.orderReqRepository.create({
+      mission: order,
+      description: description,
+      apUser: user,
     });
-    orderReq = await this.orderReqRepository.save(orderReq);
-    orderReq = await this.orderReqRepository.findOne({
-      where: { id: orderReq.id },
-      relations: ['reqUser'],
+    application = await this.orderReqRepository.save(application);
+    application = await this.orderReqRepository.findOne({
+      where: { id: application.id },
+      relations: ['apUser'],
     });
-    return orderReq.toResponseObject();
+    return application.toResponseObject();
   }
 
-  async updateOrderReq(id: string, data: Partial<OrderReqDTO>) {
+  async updateAp(applicationId: string, description: string) {
     let orderReq = await this.orderReqRepository.findOne({
-      where: { id: id },
-    });
-    if (!orderReq) {
-      throw new HttpException('OrderReq do not exist', HttpStatus.BAD_REQUEST);
-    }
-    if ((orderReq.state! = 0)) {
-      throw new HttpException(
-        'OrderReq already has been handled!',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    await this.orderReqRepository.update({ id: id }, data);
-    orderReq = await this.orderReqRepository.findOne({
-      where: { id: id },
-      relations: ['reqUser'],
-    });
-    return orderReq;
-  }
-
-  async deleteOrderReq(id: string) {
-    let orderReq = await this.orderReqRepository.findOne({
-      where: { id: id },
+      where: { id: applicationId },
     });
     if (!orderReq) {
       throw new HttpException('OrderReq do not exist', HttpStatus.BAD_REQUEST);
     }
     if (orderReq.state != 0) {
       throw new HttpException(
-        'OrderReq already has been handled!',
+        'Application has already been handled!',
         HttpStatus.BAD_REQUEST,
       );
     }
-    orderReq = await this.orderReqRepository.findOne({ id: id });
-    await this.orderReqRepository.delete({ id: id });
-    return;
+    await this.orderReqRepository.update(
+      { id: applicationId },
+      { description: description },
+    );
+    orderReq = await this.orderReqRepository.findOne({
+      where: { id: applicationId },
+      relations: ['apUser'],
+    });
+    return orderReq.toResponseObject();
+  }
+
+  async deleteApplication(applicationId: string) {
+    let application = await this.orderReqRepository.findOne({
+      where: { id: applicationId },
+    });
+    if (!application) {
+      throw new HttpException('OrderReq do not exist', HttpStatus.BAD_REQUEST);
+    }
+    if (application.state != 0) {
+      throw new HttpException(
+        'Application has already been handled!',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    application.state = 3;
+    await this.orderReqRepository.save(application);
+    application = await this.orderReqRepository.findOne({
+      where: { id: applicationId },
+      relations: ['apUser'],
+    });
+    return application.toResponseObject();
   }
 }

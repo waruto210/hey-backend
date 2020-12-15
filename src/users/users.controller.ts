@@ -1,22 +1,25 @@
-import { Controller, Get, UseGuards, Put, Body } from '@nestjs/common';
+import { Controller, Get, UseGuards, Put, Body, Param } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ProfileDTO } from './user.dto';
 import { User } from './users.decorator';
 import { UsersService } from './users.service';
 
-@Controller('api/users')
+@Controller()
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  async getProfile(@User('id') userId: string) {
-    return this.usersService.findOne(userId);
+  @Get('api/profile/:username')
+  async getProfile(@Param('username') username: string) {
+    return this.usersService.findOne(username);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put('profile')
-  async chProfile(@User('id') userId, @Body() data: Partial<ProfileDTO>) {
-    return await this.usersService.update(userId, data);
+  @Put('api/profile/:username')
+  async chProfile(
+    @Param('username') username,
+    @Body() data: Partial<ProfileDTO>,
+  ) {
+    return await this.usersService.update(username, data);
   }
 }
