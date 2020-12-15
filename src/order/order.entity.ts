@@ -24,7 +24,7 @@ export class OrderEntity {
     () => UserEntity,
     user => user.orders,
   )
-  user: UserEntity;
+  owner: UserEntity;
 
   @Column('text')
   type: string;
@@ -37,6 +37,12 @@ export class OrderEntity {
 
   @Column('int')
   people: number;
+
+  @Column({
+    type: 'int',
+    default: 0,
+  })
+  commit: number;
 
   @Column('date')
   deadline: Date;
@@ -60,7 +66,7 @@ export class OrderEntity {
     () => OrderReqEntity,
     orderReq => orderReq.order,
   )
-  req: OrderReqEntity[];
+  reqs: OrderReqEntity[];
 
   toResponseObject() {
     const states = ['待响应', '已完成', '已取消', '到期未达成'];
@@ -75,9 +81,13 @@ export class OrderEntity {
       created,
       updated,
       state,
-      req,
+      reqs: req,
     } = this;
-    const reqs = req.length;
+    let reqs = 0;
+    if (req.length) {
+      reqs = req.length;
+    }
+
     const modify = reqs == 0;
     const resObj: any = {
       id,

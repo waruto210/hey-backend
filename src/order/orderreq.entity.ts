@@ -1,3 +1,4 @@
+import { use } from 'passport';
 import { UserEntity } from 'src/users/user.entity';
 import {
   Column,
@@ -19,15 +20,15 @@ export class OrderReqEntity {
 
   @ManyToOne(
     () => OrderEntity,
-    order => order.req,
+    order => order.reqs,
   )
   order: OrderEntity;
 
   @ManyToOne(
     () => UserEntity,
-    user => user.orderReqs,
+    user => user.reqOrders,
   )
-  user: UserEntity;
+  reqUser: UserEntity;
 
   @Column('text')
   description: string;
@@ -43,7 +44,21 @@ export class OrderReqEntity {
 
   @OneToOne(
     () => OrderSucEntity,
-    orderSuc => orderSuc.orderReq,
+    orderSuc => orderSuc.req,
   )
-  orderSuc: OrderSucEntity;
+  orderSuc: OrderSucEntity[];
+
+  toResponseObject() {
+    const states = ['待处理', '同意', '拒绝', '取消'];
+    const { id, reqUser: user, description, state } = this;
+    const username = user.username;
+    const resObj: any = {
+      id,
+      username,
+      description,
+      state,
+    };
+    resObj.state = states[resObj.state];
+    return resObj;
+  }
 }

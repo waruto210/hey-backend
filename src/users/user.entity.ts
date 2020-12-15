@@ -7,6 +7,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
 } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { UserRO } from './user.dto';
@@ -75,27 +76,27 @@ export class UserEntity {
 
   @OneToMany(
     () => OrderEntity,
-    order => order.user,
+    order => order.owner,
   )
   orders: OrderEntity[];
 
   @OneToMany(
     () => OrderReqEntity,
-    orderReq => orderReq.user,
+    orderReq => orderReq.reqUser,
   )
-  orderReqs: OrderReqEntity[];
+  reqOrders: OrderReqEntity[];
+
+  @ManyToMany(
+    () => OrderSucEntity,
+    orderSuc => orderSuc.reqUser,
+  )
+  reqOrderSucs: OrderSucEntity[];
 
   @OneToMany(
     () => OrderSucEntity,
-    orderSuc => orderSuc.userReq,
+    orderSuc => orderSuc.owner,
   )
-  orderReqSucs: OrderSucEntity[];
-
-  @OneToMany(
-    () => OrderSucEntity,
-    orderSuc => orderSuc.userOwn,
-  )
-  orderOwnSucs: OrderSucEntity[];
+  ownOrderSucs: OrderSucEntity[];
 
   @BeforeInsert()
   async hashPassword() {
