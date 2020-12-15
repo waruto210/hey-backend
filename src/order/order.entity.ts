@@ -100,8 +100,6 @@ export class OrderEntity {
       created,
       updated,
       state,
-      reqs,
-      modify,
     };
     resObj.state = states[resObj.state];
     return resObj;

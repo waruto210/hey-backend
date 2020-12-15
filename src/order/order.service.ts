@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserDTO, UserRO } from 'src/users/user.dto';
 import { UserEntity } from 'src/users/user.entity';
 import { Repository } from 'typeorm';
-import { OrderDTO, OrderRO } from './order.dto';
+import { OrderDTO, OrderReqDTO, OrderRO } from './order.dto';
 import { OrderEntity } from './order.entity';
 import * as nuid from 'nuid';
 import Minio = require('minio');
@@ -12,6 +12,7 @@ import { OrderReqRo } from './orderreq.dto';
 import { OrderReqEntity } from './orderreq.entity';
 import { OrderSucEntity } from './ordersuc.entity';
 import { TotalEntity } from './total.entity';
+import { use } from 'passport';
 
 @Injectable()
 export class OrderService {
@@ -35,7 +36,7 @@ export class OrderService {
     secretKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
   });
 
-  async signUrl(order: OrderEntity): Promise<UserEntity | any> {
+  async signUrl(order: OrderEntity) {
     order.picture = await this.minioClient.presignedUrl(
       'GET',
       process.env.BUCKET,
@@ -46,8 +47,9 @@ export class OrderService {
 
   async add(userId: string, file, data: Partial<OrderDTO>) {
     const user = await this.usersRepository.findOne({ id: userId });
-    if (!this.minioClient.bucketExists(process.env.BUCKET)) {
+    if (!(await this.minioClient.bucketExists(process.env.BUCKET))) {
       await this.minioClient.makeBucket(process.env.BUCKET, 'cn-north-1');
+      Logger.log(`make bucker ${process.env.BUCKET}`, 's');
     }
 
     const filename = `${nuid.next()}.${file.mimetype.split('/')[1]}`;
@@ -216,5 +218,29 @@ export class OrderService {
       req.state = 2;
       await this.orderReqRepository.save(req);
     }
+  }
+
+  async creatOrderReq(userId: string, data: OrderReqDTO) {
+    const order = await this.orderRepository.findOne({
+      where: { id: data.orderId },
+    });
+    if (!order) {
+      throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
+    }
+    const user = await this.usersRepository.findOne({ id: userId });
+    if (!user) {
+      throw new HttpException('User do not exist', HttpStatus.BAD_REQUEST);
+    }
+    let orderReq = this.orderReqRepository.create({
+      order: order,
+      description: data.description,
+      reqUser: user,
+    });
+    orderReq = await this.orderReqRepository.save(orderReq);
+    orderReq = await this.orderReqRepository.findOne({
+      where: { id: orderReq.id },
+      relations: ['reqUser'],
+    });
+    return orderReq.toResponseObject();
   }
 }
