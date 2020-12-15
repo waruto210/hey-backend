@@ -1,11 +1,9 @@
-import { use } from 'passport';
 import { UserEntity } from 'src/users/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   ManyToOne,
-  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,

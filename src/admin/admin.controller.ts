@@ -5,7 +5,7 @@ import { UsersService } from 'src/users/users.service';
 import { AdminService } from './admin.service';
 import { OrderCondDto, OrderReqCondDto, StasCondDto } from './search.dto';
 
-@Controller('admin')
+@Controller('api/admin')
 export class AdminController {
   constructor(
     private usersService: UsersService,
@@ -14,7 +14,7 @@ export class AdminController {
   ) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get('api/allprofile')
+  @Get('allprofile')
   async getUsersProfile() {
     return await this.usersService.findAll(false);
   }

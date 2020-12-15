@@ -3,8 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Logger,
-  Param,
   Post,
   Put,
   Query,
@@ -18,7 +16,6 @@ import { User } from 'src/users/users.decorator';
 import { OrderDTO, OrderReqDTO } from './order.dto';
 import { OrderService } from './order.service';
 import 'dotenv/config';
-import { identity } from 'rxjs';
 
 @Controller('api/order')
 export class OrderController {
@@ -71,7 +68,7 @@ export class OrderController {
     @Query('reqid') reqId: string,
     @Query('agree') agree: boolean,
   ) {
-    Logger.log(`agree is ${agree}`, 's');
+    // Logger.log(`agree is ${agree}`, 's');
     return await this.orderService.handleOrderReq(orderId, reqId, agree);
   }
 

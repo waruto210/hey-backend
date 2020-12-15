@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserDTO, UserRO } from 'src/users/user.dto';
 import { UserEntity } from 'src/users/user.entity';
 import { Repository } from 'typeorm';
 import { OrderDTO, OrderReqDTO, OrderRO } from './order.dto';
@@ -12,9 +11,7 @@ import { OrderReqRo } from './orderreq.dto';
 import { OrderReqEntity } from './orderreq.entity';
 import { OrderSucEntity } from './ordersuc.entity';
 import { TotalEntity } from './total.entity';
-import { use } from 'passport';
 import { OrderCondDto, OrderReqCondDto } from 'src/admin/search.dto';
-import { from } from 'rxjs';
 
 @Injectable()
 export class OrderService {
@@ -144,6 +141,7 @@ export class OrderService {
   }
 
   async searchAllOrders(cond: Partial<OrderCondDto>): Promise<OrderRO[]> {
+    const states = ['待响应', '已完成', '已取消', '到期未达成'];
     let orders = await this.orderRepository.find({ relations: ['owner'] });
     orders = await this.checkOrderState(orders);
     if (cond.from) {
@@ -153,7 +151,7 @@ export class OrderService {
       orders = orders.filter(x => new Date(x.created) >= new Date(cond.from));
     }
     if (cond.state) {
-      orders = orders.filter(x => x.state == cond.state);
+      orders = orders.filter(x => states[x.state] == cond.state);
     }
     // orders = await Promise.all(orders.map(order => this.signUrl(order)));
     return orders.map(order => order.toResponseObject());
@@ -162,6 +160,7 @@ export class OrderService {
   async searchAllOrderReqs(
     cond: Partial<OrderReqCondDto>,
   ): Promise<OrderReqRo[]> {
+    const states = ['待处理', '同意', '拒绝', '取消'];
     let orderReqs = await this.orderReqRepository.find({
       relations: ['reqUser'],
     });
@@ -177,14 +176,14 @@ export class OrderService {
       );
     }
     if (cond.state) {
-      orderReqs = orderReqs.filter(x => x.state == cond.state);
+      orderReqs = orderReqs.filter(x => states[x.state] == cond.state);
     }
 
     return orderReqs.map(order => order.toResponseObject());
   }
 
   async deleteOrder(orderId: string) {
-    let order = await this.orderRepository.findOne({
+    const order = await this.orderRepository.findOne({
       where: { id: orderId },
     });
     if (!order) {
@@ -196,9 +195,9 @@ export class OrderService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    order = await this.orderRepository.findOne({ id: orderId });
+    order.state = 2;
 
-    await this.orderRepository.delete({ id: orderId });
+    await this.orderRepository.save(order);
   }
 
   async fetchOrderReqs(orderId: string): Promise<OrderReqRo[]> {
@@ -343,7 +342,7 @@ export class OrderService {
     if (!orderReq) {
       throw new HttpException('OrderReq do not exist', HttpStatus.BAD_REQUEST);
     }
-    if ((orderReq.state! = 0)) {
+    if (orderReq.state != 0) {
       throw new HttpException(
         'OrderReq already has been handled!',
         HttpStatus.BAD_REQUEST,

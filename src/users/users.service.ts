@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { ProfileDTO, UserDTO, UserRO } from './user.dto';
 import * as bcrypt from 'bcryptjs';
-import { use } from 'passport';
 
 export type User = any;
 

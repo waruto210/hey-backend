@@ -4,5 +4,5 @@ export class OrderReqRo {
   id: string;
   requser: UserRO;
   description: string;
-  state: number;
+  state: string;
 }

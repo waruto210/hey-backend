@@ -1,13 +1,13 @@
 export class OrderCondDto {
   from: Date;
   to: Date;
-  state: number;
+  state: string;
 }
 
 export class OrderReqCondDto {
   from: Date;
   to: Date;
-  state: number;
+  state: string;
 }
 
 export class StasCondDto {

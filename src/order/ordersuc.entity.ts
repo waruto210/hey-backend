@@ -1,13 +1,5 @@
 import { UserEntity } from 'src/users/user.entity';
-import { User } from 'src/users/users.service';
-import {
-  Column,
-  Entity,
-  ManyToMany,
-  ManyToOne,
-  OneToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { OrderReqEntity } from './orderreq.entity';
 
 @Entity('ordersuc')

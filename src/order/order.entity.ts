@@ -1,4 +1,3 @@
-import { type } from 'os';
 import { UserEntity } from 'src/users/user.entity';
 import {
   Column,
@@ -9,10 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { OrderRO } from './order.dto';
-import Minio = require('minio');
 import 'dotenv/config';
-import { Logger } from '@nestjs/common';
 import { OrderReqEntity } from './orderreq.entity';
 
 @Entity('order')
