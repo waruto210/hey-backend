@@ -103,7 +103,7 @@ export class UserEntity {
     this.password = await bcrypt.hash(this.password, 10);
   }
 
-  toResponseObject(): UserRO {
+  toResponseObject(showId = true): UserRO {
     const levels = ['一般', '重要', '钻石'];
     const {
       id,
@@ -120,13 +120,15 @@ export class UserEntity {
       id,
       username,
       name,
-      identityType,
-      identity,
       phone,
       level,
       description,
       city,
     };
+    if (showId) {
+      responseObject.identityType = identityType;
+      responseObject.identity = identity;
+    }
     responseObject.level = levels[responseObject.level];
 
     return responseObject;

@@ -1,3 +1,5 @@
+import { UserRO } from 'src/users/user.dto';
+
 export class OrderDTO {
   type: string;
   name: string;
@@ -8,7 +10,7 @@ export class OrderDTO {
 
 export class OrderRO {
   id: string;
-  user: string;
+  owner: UserRO;
   type: string;
   name: string;
   description: string;
@@ -18,8 +20,7 @@ export class OrderRO {
   created: Date;
   updated: Date;
   state: string;
-  reqs: number;
-  modify: boolean;
+  commit: number;
 }
 
 export class OrderReqDTO {

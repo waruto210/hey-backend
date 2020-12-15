@@ -45,11 +45,16 @@ export class UsersService {
     return user.toResponseObject();
   }
 
-  async findOne(userId): Promise<UserRO> {
+  async findOne(userId, showId = true): Promise<UserRO> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new HttpException('User do not exists', HttpStatus.BAD_REQUEST);
     }
     return user.toResponseObject();
+  }
+
+  async findAll(showId = true): Promise<UserRO[]> {
+    const users = await this.userRepository.find({ isadmin: false });
+    return users.map(x => x.toResponseObject(showId));
   }
 }

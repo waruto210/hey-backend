@@ -31,7 +31,7 @@ export class OrderController {
     @User('id') userId: string,
     @Body() data: Partial<OrderDTO>,
   ) {
-    Logger.log(`file is ${file}`, 's');
+    Logger.log(`userId is ${userId}`, 's');
     return await this.orderService.add(userId, file, data);
   }
 
@@ -45,7 +45,7 @@ export class OrderController {
   @UseGuards(JwtAuthGuard)
   @Get('order')
   async showOrders(@User('id') userId: string) {
-    return await this.orderService.showAll(userId);
+    return await this.orderService.showAllOrders(userId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -66,7 +66,7 @@ export class OrderController {
   async handlereq(
     @Query('orderid') orderId: string,
     @Query('reqid') reqId: string,
-    @Body('agree') agree: boolean,
+    @Query('agree') agree: boolean,
   ) {
     return await this.orderService.handleOrderReq(orderId, reqId, agree);
   }
@@ -74,7 +74,7 @@ export class OrderController {
   @UseGuards(JwtAuthGuard)
   @Get('orderreq')
   async showAllOrders() {
-    return await this.orderService.showAll('');
+    return await this.orderService.showAllOrders('');
   }
   @UseGuards(JwtAuthGuard)
   @Post('orderreq')
