@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { OrderEntity } from 'src/order/order.entity';
-import { OrderReqEntity } from 'src/order/orderreq.entity';
-import { OrderSucEntity } from 'src/order/ordersuc.entity';
-import { TotalEntity } from 'src/order/total.entity';
+import { MissionEntity } from 'src/mission/mission.entity';
+import { ApplicationEntity } from 'src/mission/application.entity';
+import { TransactionEntity } from 'src/mission/transaction.entity';
+import { StatsEntity } from 'src/mission/stats.entity';
 import { UserEntity } from 'src/users/user.entity';
 import { Repository } from 'typeorm';
 import { OrderCondDto, StasCondDto } from './search.dto';
@@ -11,16 +11,16 @@ import { OrderCondDto, StasCondDto } from './search.dto';
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectRepository(OrderEntity)
-    private orderRepository: Repository<OrderEntity>,
+    @InjectRepository(MissionEntity)
+    private orderRepository: Repository<MissionEntity>,
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
-    @InjectRepository(OrderReqEntity)
-    private orderReqRepository: Repository<OrderReqEntity>,
-    @InjectRepository(OrderSucEntity)
-    private orderSucRepository: Repository<OrderSucEntity>,
-    @InjectRepository(TotalEntity)
-    private totalRepository: Repository<TotalEntity>,
+    @InjectRepository(ApplicationEntity)
+    private orderReqRepository: Repository<ApplicationEntity>,
+    @InjectRepository(TransactionEntity)
+    private orderSucRepository: Repository<TransactionEntity>,
+    @InjectRepository(StatsEntity)
+    private totalRepository: Repository<StatsEntity>,
   ) {}
 
   async getStas(cond: Partial<StasCondDto>) {

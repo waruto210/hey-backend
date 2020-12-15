@@ -1,27 +1,27 @@
 import { UserEntity } from 'src/users/user.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { OrderReqEntity } from './orderreq.entity';
+import { ApplicationEntity } from './application.entity';
 
-@Entity('ordersuc')
-export class OrderSucEntity {
+@Entity('transaction')
+export class TransactionEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @ManyToOne(
-    () => OrderReqEntity,
-    orderReq => orderReq.missionSuc,
+    () => ApplicationEntity,
+    application => application.transactions,
   )
-  application: OrderReqEntity;
+  application: ApplicationEntity;
 
   @ManyToOne(
     () => UserEntity,
-    user => user.missionApSucs,
+    user => user.apTransactions,
   )
   apUser: UserEntity;
 
   @ManyToOne(
     () => UserEntity,
-    user => user.missionOwnSucs,
+    user => user.missonTransactions,
   )
   owner: UserEntity;
 

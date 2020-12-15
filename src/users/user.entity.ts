@@ -10,9 +10,10 @@ import {
 } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { UserRO } from './user.dto';
-import { OrderEntity } from 'src/order/order.entity';
-import { OrderReqEntity } from 'src/order/orderreq.entity';
-import { OrderSucEntity } from 'src/order/ordersuc.entity';
+import { MissionEntity } from 'src/mission/mission.entity';
+import { ApplicationEntity } from 'src/mission/application.entity';
+import { TransactionEntity } from 'src/mission/transaction.entity';
+import { userLevels } from 'src/constants';
 
 @Entity('user')
 export class UserEntity {
@@ -74,28 +75,28 @@ export class UserEntity {
   updated: Date;
 
   @OneToMany(
-    () => OrderEntity,
-    order => order.owner,
+    () => MissionEntity,
+    mission => mission.owner,
   )
-  missions: OrderEntity[];
+  missions: MissionEntity[];
 
   @OneToMany(
-    () => OrderReqEntity,
-    orderReq => orderReq.apUser,
+    () => ApplicationEntity,
+    application => application.apUser,
   )
-  missionAps: OrderReqEntity[];
+  applications: ApplicationEntity[];
 
   @OneToMany(
-    () => OrderSucEntity,
-    orderSuc => orderSuc.apUser,
+    () => TransactionEntity,
+    transaction => transaction.apUser,
   )
-  missionApSucs: OrderSucEntity[];
+  apTransactions: TransactionEntity[];
 
   @OneToMany(
-    () => OrderSucEntity,
-    orderSuc => orderSuc.owner,
+    () => TransactionEntity,
+    transaction => transaction.owner,
   )
-  missionOwnSucs: OrderSucEntity[];
+  missonTransactions: TransactionEntity[];
 
   @BeforeInsert()
   async hashPassword() {
@@ -103,7 +104,6 @@ export class UserEntity {
   }
 
   toResponseObject(showId = true): UserRO {
-    const levels = ['一般', '重要', '钻石'];
     const {
       id,
       username,
@@ -130,7 +130,7 @@ export class UserEntity {
       responseObject.identityType = identityType;
       responseObject.identity = identity;
     }
-    responseObject.level = levels[responseObject.level];
+    responseObject.level = userLevels[responseObject.level];
 
     return responseObject;
   }

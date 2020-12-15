@@ -9,10 +9,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import 'dotenv/config';
-import { OrderReqEntity } from './orderreq.entity';
+import { ApplicationEntity } from './application.entity';
+import { missionStates } from 'src/constants';
+import { MissionRO } from './mission.dto';
 
-@Entity('order')
-export class OrderEntity {
+@Entity('mission')
+export class MissionEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -46,10 +48,14 @@ export class OrderEntity {
   @Column('text')
   picture: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({
+    type: 'date',
+  })
   created: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({
+    type: 'date',
+  })
   updated: Date;
 
   @Column({
@@ -59,13 +65,12 @@ export class OrderEntity {
   state: number;
 
   @OneToMany(
-    () => OrderReqEntity,
+    () => ApplicationEntity,
     orderReq => orderReq.mission,
   )
-  applications: OrderReqEntity[];
+  applications: ApplicationEntity[];
 
-  toResponseObject(isOwner = false) {
-    const states = ['待响应', '已完成', '已取消', '到期未达成'];
+  toResponseObject(isOwner = false): MissionRO {
     const {
       id,
       owner,
@@ -97,7 +102,7 @@ export class OrderEntity {
       resObj.owner = owner.toResponseObject(false);
     }
     resObj.isOwner = isOwner;
-    resObj.state = states[resObj.state];
+    resObj.state = missionStates[resObj.state];
     // Logger.log(`resObj is ${owner}`, 'heer');
     return resObj;
   }

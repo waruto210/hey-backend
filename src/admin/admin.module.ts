@@ -2,25 +2,25 @@ import { Module } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrderEntity } from 'src/order/order.entity';
+import { MissionEntity } from 'src/mission/mission.entity';
 import { UserEntity } from 'src/users/user.entity';
-import { OrderReqEntity } from 'src/order/orderreq.entity';
-import { OrderSucEntity } from 'src/order/ordersuc.entity';
-import { TotalEntity } from 'src/order/total.entity';
+import { ApplicationEntity } from 'src/mission/application.entity';
+import { TransactionEntity } from 'src/mission/transaction.entity';
+import { StatsEntity } from 'src/mission/stats.entity';
 import { UsersService } from 'src/users/users.service';
-import { OrderService } from 'src/order/order.service';
+import { MissionService } from 'src/mission/mission.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      OrderEntity,
+      MissionEntity,
       UserEntity,
-      OrderReqEntity,
-      OrderSucEntity,
-      TotalEntity,
+      ApplicationEntity,
+      TransactionEntity,
+      StatsEntity,
     ]),
   ],
-  providers: [AdminService, UsersService, OrderService],
+  providers: [AdminService, UsersService, MissionService],
   controllers: [AdminController],
 })
 export class AdminModule {}
