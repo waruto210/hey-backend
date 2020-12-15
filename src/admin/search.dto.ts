@@ -1,11 +1,18 @@
-export class OrderConDto {
+export class OrderCondDto {
   from: Date;
   to: Date;
   state: number;
 }
 
-export class OrderReqConDto {
+export class OrderReqCondDto {
   from: Date;
   to: Date;
   state: number;
+}
+
+export class StasCondDto {
+  from: Date;
+  to: Date;
+  city: string;
+  sortkey: string;
 }

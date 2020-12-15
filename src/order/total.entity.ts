@@ -10,7 +10,7 @@ export class TotalEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @UpdateDateColumn()
+  @Column('date')
   date: Date;
 
   @Column('text')
