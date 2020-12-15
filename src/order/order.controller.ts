@@ -29,9 +29,9 @@ export class OrderController {
   async pubOrder(
     @UploadedFile() file,
     @User('id') userId: string,
-    @Body() data: Partial<OrderDTO>,
+    @Body() data: OrderDTO,
   ) {
-    Logger.log(`userId is ${userId}`, 's');
+    // Logger.log(`userId is ${userId}`, 's');
     return await this.orderService.add(userId, file, data);
   }
 
@@ -68,6 +68,7 @@ export class OrderController {
     @Query('reqid') reqId: string,
     @Query('agree') agree: boolean,
   ) {
+    Logger.log(`agree is ${agree}`, 's');
     return await this.orderService.handleOrderReq(orderId, reqId, agree);
   }
 

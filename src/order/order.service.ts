@@ -13,7 +13,7 @@ import { OrderReqEntity } from './orderreq.entity';
 import { OrderSucEntity } from './ordersuc.entity';
 import { TotalEntity } from './total.entity';
 import { use } from 'passport';
-import { OrderConDto, OrderReqConDto } from 'src/admin/search.dto';
+import { OrderCondDto, OrderReqCondDto } from 'src/admin/search.dto';
 import { from } from 'rxjs';
 
 @Injectable()
@@ -48,9 +48,13 @@ export class OrderService {
   }
 
   async checkOrderState(orders: OrderEntity[]) {
+    // Logger.log(`order state update`, 'ss');
     const now = new Date();
     for (const order of orders) {
-      if (order.deadline <= now) {
+      // Logger.log(`order state ${typeof order.deadline} `, 'ss');
+      const ddl = new Date(order.deadline);
+      if (ddl <= now) {
+        // Logger.log(`order state update`, 'ss');
         order.state = 3;
         await this.orderRepository.save(order);
       }
@@ -58,11 +62,11 @@ export class OrderService {
     return orders;
   }
 
-  async add(userId: string, file, data: Partial<OrderDTO>) {
+  async add(userId: string, file, data: OrderDTO) {
     const user = await this.usersRepository.findOne({ id: userId });
     if (!(await this.minioClient.bucketExists(process.env.BUCKET))) {
       await this.minioClient.makeBucket(process.env.BUCKET, 'cn-north-1');
-      Logger.log(`make bucker ${process.env.BUCKET}`, 's');
+      // Logger.log(`make bucker ${process.env.BUCKET}`, 's');
     }
 
     const filename = `${nuid.next()}.${file.mimetype.split('/')[1]}`;
@@ -73,7 +77,9 @@ export class OrderService {
       file.buffer,
       metaData,
     );
-
+    if (new Date(data.deadline) < new Date()) {
+      throw new HttpException('ddl is too early', HttpStatus.BAD_REQUEST);
+    }
     let order = this.orderRepository.create({
       ...data,
       picture: filename,
@@ -128,14 +134,14 @@ export class OrderService {
     return orders.map(order => order.toResponseObject());
   }
 
-  async searchAllOrders(cond: Partial<OrderConDto>): Promise<OrderRO[]> {
+  async searchAllOrders(cond: Partial<OrderCondDto>): Promise<OrderRO[]> {
     let orders = await this.orderRepository.find({ relations: ['owner'] });
     orders = await this.checkOrderState(orders);
     if (cond.from) {
-      orders = orders.filter(x => x.created >= cond.from);
+      orders = orders.filter(x => new Date(x.created) >= new Date(cond.from));
     }
     if (cond.to) {
-      orders = orders.filter(x => x.created <= cond.to);
+      orders = orders.filter(x => new Date(x.created) >= new Date(cond.from));
     }
     if (cond.state) {
       orders = orders.filter(x => x.state == cond.state);
@@ -145,17 +151,21 @@ export class OrderService {
   }
 
   async searchAllOrderReqs(
-    cond: Partial<OrderReqConDto>,
+    cond: Partial<OrderReqCondDto>,
   ): Promise<OrderReqRo[]> {
     let orderReqs = await this.orderReqRepository.find({
       relations: ['reqUser'],
     });
 
     if (cond.from) {
-      orderReqs = orderReqs.filter(x => x.created >= cond.from);
+      orderReqs = orderReqs.filter(
+        x => new Date(x.created) >= new Date(cond.from),
+      );
     }
     if (cond.to) {
-      orderReqs = orderReqs.filter(x => x.created <= cond.to);
+      orderReqs = orderReqs.filter(
+        x => new Date(x.created) >= new Date(cond.from),
+      );
     }
     if (cond.state) {
       orderReqs = orderReqs.filter(x => x.state == cond.state);
@@ -213,7 +223,13 @@ export class OrderService {
       throw new HttpException('Order do not exist', HttpStatus.BAD_REQUEST);
     }
     let req = order.reqs.filter(x => x.id == reqId)[0];
-    if (agree === true) {
+    Logger.log(
+      `agree is ${agree}, ${typeof agree}, ${agree == true}, state is ${
+        req.state
+      }`,
+      's',
+    );
+    if (Boolean(agree) === true) {
       if (req.state >= 1) {
         throw new HttpException('Req already handled!', HttpStatus.BAD_REQUEST);
       }
@@ -237,12 +253,13 @@ export class OrderService {
         commission: 1,
       });
       let total = await this.totalRepository.findOne({
-        where: { city: order.owner.city, type: order.type },
+        where: { city: order.owner.city, type: order.type, date: new Date() },
       });
       if (!total) {
         total = this.totalRepository.create({
           city: order.owner.city,
           type: order.type,
+          date: new Date(),
           count: 0,
           income: 0,
         });
