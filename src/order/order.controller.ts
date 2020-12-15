@@ -19,26 +19,28 @@ import { OrderDTO, OrderReqDTO } from './order.dto';
 import { OrderService } from './order.service';
 import 'dotenv/config';
 
-@Controller('order')
+@Controller('api/order')
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('picture'))
   @Post('order')
-  async pubOrder(
-    @UploadedFile() file,
-    @User('id') userId: string,
-    @Body() data: OrderDTO,
-  ) {
+  async pubOrder(@User('id') userId, @Body() data: OrderDTO) {
     // Logger.log(`userId is ${userId}`, 's');
-    return await this.orderService.add(userId, file, data);
+    return await this.orderService.add(userId, data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('picture'))
+  @Post('image')
+  async addImage(@UploadedFile() file) {
+    return await this.orderService.addImage(file);
   }
 
   @UseGuards(JwtAuthGuard)
   @Put('order')
   async updateOrder(@Query('id') orderId, @Body() data: Partial<OrderDTO>) {
-    Logger.log(`data is ${data.type}`, 'Order');
+    // Logger.log(`data is ${data.type}`, 'Order');
     return await this.orderService.update(orderId, data);
   }
 

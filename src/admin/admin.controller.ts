@@ -14,7 +14,7 @@ export class AdminController {
   ) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get('allprofile')
+  @Get('api/allprofile')
   async getUsersProfile() {
     return await this.usersService.findAll(false);
   }

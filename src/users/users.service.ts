@@ -50,7 +50,7 @@ export class UsersService {
     if (!user) {
       throw new HttpException('User do not exists', HttpStatus.BAD_REQUEST);
     }
-    return user.toResponseObject();
+    return user.toResponseObject(showId);
   }
 
   async findAll(showId = true): Promise<UserRO[]> {

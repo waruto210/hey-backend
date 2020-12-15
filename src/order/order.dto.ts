@@ -4,6 +4,7 @@ export class OrderDTO {
   type: string;
   name: string;
   description: string;
+  picture: string;
   people: number;
   deadline: Date;
 }

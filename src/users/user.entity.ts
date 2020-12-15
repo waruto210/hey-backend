@@ -115,6 +115,7 @@ export class UserEntity {
       level,
       description,
       city,
+      isadmin,
     } = this;
     const responseObject: any = {
       id,
@@ -124,6 +125,7 @@ export class UserEntity {
       level,
       description,
       city,
+      isadmin,
     };
     if (showId) {
       responseObject.identityType = identityType;

@@ -31,11 +31,11 @@ export class OrderService {
     private totalRepository: Repository<TotalEntity>,
   ) {}
   private minioClient = new Minio.Client({
-    endPoint: 'localhost',
-    port: 9000,
+    endPoint: process.env.ENDPOINT,
+    port: Number(process.env.MINPORT),
     useSSL: false,
-    accessKey: 'AKIAIOSFODNN7EXAMPLE',
-    secretKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+    accessKey: process.env.ACCESS,
+    secretKey: process.env.SECRET,
   });
 
   async signUrl(order: OrderEntity) {
@@ -61,14 +61,10 @@ export class OrderService {
     }
     return orders;
   }
-
-  async add(userId: string, file, data: OrderDTO) {
-    const user = await this.usersRepository.findOne({ id: userId });
+  async addImage(file) {
     if (!(await this.minioClient.bucketExists(process.env.BUCKET))) {
       await this.minioClient.makeBucket(process.env.BUCKET, 'cn-north-1');
-      // Logger.log(`make bucker ${process.env.BUCKET}`, 's');
     }
-
     const filename = `${nuid.next()}.${file.mimetype.split('/')[1]}`;
     const metaData = { 'Content-Type': file.mimetype };
     await this.minioClient.putObject(
@@ -77,12 +73,25 @@ export class OrderService {
       file.buffer,
       metaData,
     );
+    const url =
+      'http://' +
+      process.env.ENDPOINT +
+      ':' +
+      process.env.MINPORT +
+      '/' +
+      process.env.BUCKET +
+      '/' +
+      filename;
+    return { picture: url };
+  }
+  async add(userId: string, data: OrderDTO) {
+    const user = await this.usersRepository.findOne({ id: userId });
+
     if (new Date(data.deadline) < new Date()) {
       throw new HttpException('ddl is too early', HttpStatus.BAD_REQUEST);
     }
     let order = this.orderRepository.create({
       ...data,
-      picture: filename,
       owner: user,
     });
     order = await this.orderRepository.save(order);
@@ -91,7 +100,7 @@ export class OrderService {
       relations: ['owner'],
     });
     // Logger.log(`order.owner is owner ${order.owner}`, 's');
-    order = await this.signUrl(order);
+    // order = await this.signUrl(order);
     return order.toResponseObject();
   }
 
@@ -112,7 +121,7 @@ export class OrderService {
     order = await this.orderRepository.findOne({
       where: { id: orderId },
     });
-    order = await this.signUrl(order);
+    // order = await this.signUrl(order);
     return order.toResponseObject();
   }
 
@@ -130,7 +139,7 @@ export class OrderService {
       });
     }
     orders = await this.checkOrderState(orders);
-    orders = await Promise.all(orders.map(order => this.signUrl(order)));
+    // orders = await Promise.all(orders.map(order => this.signUrl(order)));
     return orders.map(order => order.toResponseObject());
   }
 
@@ -146,7 +155,7 @@ export class OrderService {
     if (cond.state) {
       orders = orders.filter(x => x.state == cond.state);
     }
-    orders = await Promise.all(orders.map(order => this.signUrl(order)));
+    // orders = await Promise.all(orders.map(order => this.signUrl(order)));
     return orders.map(order => order.toResponseObject());
   }
 
