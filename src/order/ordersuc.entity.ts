@@ -36,9 +36,15 @@ export class OrderSucEntity {
   @Column('date')
   finishDate: Date;
 
-  @Column('int')
+  @Column({
+    type: 'int',
+    default: 0,
+  })
   pay: number;
 
-  @Column('int')
+  @Column({
+    type: 'int',
+    default: 0,
+  })
   commission: number;
 }

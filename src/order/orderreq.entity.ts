@@ -39,7 +39,10 @@ export class OrderReqEntity {
   @UpdateDateColumn()
   updated: Date;
 
-  @Column('int')
+  @Column({
+    type: 'int',
+    default: 0,
+  })
   state: number;
 
   @OneToOne(
@@ -51,7 +54,10 @@ export class OrderReqEntity {
   toResponseObject() {
     const states = ['待处理', '同意', '拒绝', '取消'];
     const { id, reqUser: user, description, state } = this;
-    const username = user.username;
+    let username = '';
+    if (user.username) {
+      username = user.username;
+    }
     const resObj: any = {
       id,
       username,

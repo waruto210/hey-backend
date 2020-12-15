@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { User } from 'src/users/users.decorator';
-import { OrderDTO } from './order.dto';
+import { OrderDTO, OrderReqDTO } from './order.dto';
 import { OrderService } from './order.service';
 import 'dotenv/config';
 
@@ -31,6 +31,7 @@ export class OrderController {
     @User('id') userId: string,
     @Body() data: Partial<OrderDTO>,
   ) {
+    Logger.log(`file is ${file}`, 's');
     return await this.orderService.add(userId, file, data);
   }
 
@@ -74,5 +75,10 @@ export class OrderController {
   @Get('orderreq')
   async showAllOrders() {
     return await this.orderService.showAll('');
+  }
+  @UseGuards(JwtAuthGuard)
+  @Post('orderreq')
+  async createOrderReq(@User('id') userId: string, @Body() data: OrderReqDTO) {
+    return await this.orderService.creatOrderReq(userId, data);
   }
 }

@@ -21,3 +21,8 @@ export class OrderRO {
   reqs: number;
   modify: boolean;
 }
+
+export class OrderReqDTO {
+  orderId: string;
+  description: string;
+}
