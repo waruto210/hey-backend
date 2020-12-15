@@ -18,6 +18,7 @@ import { User } from 'src/users/users.decorator';
 import { OrderDTO, OrderReqDTO } from './order.dto';
 import { OrderService } from './order.service';
 import 'dotenv/config';
+import { identity } from 'rxjs';
 
 @Controller('api/order')
 export class OrderController {
@@ -83,5 +84,21 @@ export class OrderController {
   @Post('orderreq')
   async createOrderReq(@User('id') userId: string, @Body() data: OrderReqDTO) {
     return await this.orderService.creatOrderReq(userId, data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('orderreq')
+  async updateOrderReq(
+    @Query('id') id: string,
+    @Body() data: Partial<OrderReqDTO>,
+  ) {
+    //Logger.log(`data is ${data.description}`, 'orderreq');
+    return await this.orderService.updateOrderReq(id, data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('orderreq')
+  async deleteOrderReq(@Query('id') id: string) {
+    return await this.orderService.deleteOrderReq(id);
   }
 }
