@@ -11,6 +11,7 @@ export class AppService {
     accessKey: process.env.ACCESS,
     secretKey: process.env.SECRET,
   });
+
   async upload(file) {
     if (!(await this.minioClient.bucketExists(process.env.BUCKET))) {
       await this.minioClient.makeBucket(process.env.BUCKET, 'cn-north-1');

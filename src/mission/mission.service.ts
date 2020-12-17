@@ -161,7 +161,7 @@ export class MissionService {
   ): Promise<ApplicationRo> {
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId },
-      relations: ['apUser'],
+      relations: ['apUser', 'mission'],
     });
     if (!application) {
       throw new HttpException('application not exist', HttpStatus.BAD_REQUEST);
@@ -202,7 +202,7 @@ export class MissionService {
       }
       ap = await this.applicationRepository.save(ap);
 
-      const orderSuc = this.transactionRepository.create({
+      const transaction = this.transactionRepository.create({
         application: ap,
         apUser: ap.apUser,
         owner: mission.owner,
@@ -210,15 +210,15 @@ export class MissionService {
         pay: 3,
         commission: 1,
       });
-      let total = await this.statsRepository.findOne({
+      let stats = await this.statsRepository.findOne({
         where: {
           city: mission.owner.city,
           type: mission.type,
           date: new Date(),
         },
       });
-      if (!total) {
-        total = this.statsRepository.create({
+      if (!stats) {
+        stats = this.statsRepository.create({
           city: mission.owner.city,
           type: mission.type,
           date: new Date(),
@@ -226,11 +226,11 @@ export class MissionService {
           income: 0,
         });
       }
-      total.count += 1;
-      total.income += 1;
-      await this.statsRepository.save(total);
+      stats.count += 1;
+      stats.income += 1;
+      await this.statsRepository.save(stats);
       // 任务完成
-      await this.transactionRepository.save(orderSuc);
+      await this.transactionRepository.save(transaction);
       if (mission.commit == mission.people) {
         // 召集令完成
         mission.state = 1;
@@ -264,7 +264,7 @@ export class MissionService {
     application = await this.applicationRepository.save(application);
     application = await this.applicationRepository.findOne({
       where: { id: application.id },
-      relations: ['apUser'],
+      relations: ['apUser', 'mission'],
     });
     return application.toResponseObject();
   }
@@ -288,7 +288,7 @@ export class MissionService {
     );
     orderReq = await this.applicationRepository.findOne({
       where: { id: applicationId },
-      relations: ['apUser'],
+      relations: ['apUser', 'mission'],
     });
     return orderReq.toResponseObject();
   }
@@ -310,7 +310,7 @@ export class MissionService {
     await this.applicationRepository.save(application);
     application = await this.applicationRepository.findOne({
       where: { id: applicationId },
-      relations: ['apUser'],
+      relations: ['apUser', 'mission'],
     });
     return application.toResponseObject();
   }
