@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ProfileDTO } from './user.dto';
+import { User } from './users.decorator';
 import { UsersService } from './users.service';
 
 @Controller('api/profile')
@@ -17,19 +18,16 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get(':username')
-  async getProfile(@Param('username') username: string) {
-    this.logger.log(`username: ${username}`);
-    return this.usersService.findOne(username);
+  @Get('')
+  async getProfile(@User('id') userId: string) {
+    this.logger.log(`here userId: ${userId}`);
+    return await this.usersService.findOne(userId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put(':username')
-  async chProfile(
-    @Param('username') username,
-    @Body() data: Partial<ProfileDTO>,
-  ) {
-    this.logger.log(`username: ${username}, data: ${data}`);
-    return await this.usersService.update(username, data);
+  @Put('')
+  async chProfile(@User('id') userId, @Body() data: Partial<ProfileDTO>) {
+    this.logger.log(`userId: ${userId}, data: ${data.description}`);
+    return await this.usersService.update(userId, data);
   }
 }

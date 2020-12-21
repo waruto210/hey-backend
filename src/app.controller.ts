@@ -1,5 +1,6 @@
 import {
   Controller,
+  Logger,
   Post,
   UploadedFile,
   UseGuards,
@@ -13,10 +14,10 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 export class AppController {
   constructor(private appService: AppService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('picture'))
+  @UseInterceptors(FileInterceptor('file'))
   @Post('upload')
   async upload(@UploadedFile() file) {
+    Logger.log('upload picture', 'file');
     return await this.appService.upload(file);
   }
 }

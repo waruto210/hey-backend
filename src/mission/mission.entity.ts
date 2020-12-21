@@ -66,13 +66,13 @@ export class MissionEntity {
 
   @OneToMany(
     () => ApplicationEntity,
-    orderReq => orderReq.mission,
+    application => application.mission,
   )
   applications: ApplicationEntity[];
 
   toResponseObject(isOwner = false): MissionRO {
     const {
-      id,
+      id: missionId,
       owner,
       type,
       title: title,
@@ -84,9 +84,10 @@ export class MissionEntity {
       updated,
       state,
       commit,
+      applications,
     } = this;
     const resObj: any = {
-      id,
+      missionId,
       type,
       title,
       description,
@@ -99,7 +100,10 @@ export class MissionEntity {
       commit,
     };
     if (owner) {
-      resObj.owner = owner.toResponseObject(false);
+      resObj.owner = owner.toResponseObject();
+    }
+    if (applications) {
+      resObj.applications = applications.map(x => x.toResponseObject());
     }
     resObj.isOwner = isOwner;
     resObj.state = missionStates[resObj.state];

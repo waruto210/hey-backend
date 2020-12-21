@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -40,9 +41,16 @@ export class MissionController {
 
   @UseGuards(JwtAuthGuard)
   @Get('mission/:missionId')
-  async showOrders(@User('id') userId, @Param('missionId') missionId) {
+  async showMission(@User('id') userId, @Param('missionId') missionId) {
     this.logger.log(`userId: ${userId}, missionId: ${missionId}`);
     return await this.missionService.findOneMission(userId, missionId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('user/:missionId/application')
+  async findUserAp(@User('id') userId, @Param('missionId') missionId) {
+    this.logger.log(`userId: ${userId}, missionId: ${missionId}`);
+    return await this.missionService.findAp(userId, missionId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -102,7 +110,7 @@ export class MissionController {
 
   @UseGuards(JwtAuthGuard)
   @Put('mission/:missionId/application/:applicationId')
-  async getApplication(
+  async updateApplication(
     @Param('applicationId') applicationId: string,
     @Body('description') description: string,
   ) {
@@ -125,10 +133,12 @@ export class MissionController {
   @UseGuards(JwtAuthGuard)
   @Get('missions')
   async searchMission(
+    @Request() req,
     @Query('owner') owner: string,
     @Query('type') type: string,
     @Query('keyword') keyword: string,
   ) {
+    // this.logger.log(`req: ${req.headers.Authorization}`);
     this.logger.log(`owner: ${owner}, type: ${type}, keyword: ${keyword}`);
     return await this.missionService.searchMissions(owner, type, keyword);
   }

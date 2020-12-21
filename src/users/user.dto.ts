@@ -1,3 +1,5 @@
+import { MissionRO } from 'src/mission/mission.dto';
+
 export class UserDTO {
   username: string;
   password: string;
@@ -6,9 +8,11 @@ export class UserDTO {
   city: string;
 }
 export class ProfileDTO {
+  oldPassword: string;
   password: string;
   phone: string;
   description: string;
+  city: string;
 }
 export class UserRO {
   id: string;
@@ -21,4 +25,5 @@ export class UserRO {
   description: string;
   city: string;
   isadmin: boolean;
+  missions: MissionRO;
 }

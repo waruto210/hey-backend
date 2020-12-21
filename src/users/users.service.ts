@@ -34,22 +34,41 @@ export class UsersService {
     return user;
   }
 
-  async update(username, data: Partial<ProfileDTO>): Promise<UserRO> {
+  async update(userId, data: Partial<ProfileDTO>): Promise<UserRO> {
     let user = await this.userRepository.findOne({
-      where: { username: username },
+      where: { id: userId },
     });
     if (!user) {
       throw new HttpException('User do not exists', HttpStatus.BAD_REQUEST);
     }
-    await this.userRepository.update({ username: username }, data);
-    user = await this.userRepository.findOne({ username: username });
+    if (data.oldPassword && data.password) {
+      if (bcrypt.compare(data.oldPassword, user.password)) {
+        user.password = await bcrypt.hash(data.password, 10);
+        await this.userRepository.save(user);
+      }
+    }
+    if (data.description) {
+      user.description = data.description;
+      await this.userRepository.save(user);
+    }
+    if (data.phone) {
+      user.phone = data.phone;
+      await this.userRepository.save(user);
+    }
+    if (data.city) {
+      user.city = data.city;
+      await this.userRepository.save(user);
+    }
+    user = await this.userRepository.findOne({ id: userId });
     return user.toResponseObject();
   }
 
-  async findOne(username, showId = true): Promise<UserRO> {
+  async findOne(userId: string, showId = true): Promise<UserRO> {
     const user = await this.userRepository.findOne({
-      where: { username: username },
+      where: { id: userId },
+      relations: ['missions'],
     });
+    Logger.log(`user is ${user}`, 'ni');
     if (!user) {
       throw new HttpException('User do not exists', HttpStatus.BAD_REQUEST);
     }

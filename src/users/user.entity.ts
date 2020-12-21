@@ -115,6 +115,7 @@ export class UserEntity {
       description,
       city,
       isadmin,
+      missions,
     } = this;
     const responseObject: any = {
       id,
@@ -129,6 +130,9 @@ export class UserEntity {
     if (showId) {
       responseObject.identityType = identityType;
       responseObject.identity = identity;
+    }
+    if (missions) {
+      responseObject.missions = missions.map(x => x.toResponseObject());
     }
     responseObject.level = userLevels[responseObject.level];
 

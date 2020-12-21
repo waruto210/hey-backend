@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/users/user.entity';
 import { Repository } from 'typeorm';
@@ -87,8 +87,9 @@ export class MissionService {
     await this.checkMissionState([mission])[0];
     mission = await this.missionRepository.findOne({
       where: { id: missionId },
-      relations: ['owner'],
+      relations: ['owner', 'applications'],
     });
+    Logger.log(`mission.owner.id ${mission.owner.id}, userId ${userId}`, 'm');
     const isOwner = mission.owner.id == userId;
     return mission.toResponseObject(isOwner);
   }
@@ -99,6 +100,7 @@ export class MissionService {
     keyword: string,
   ): Promise<MissionRO[]> {
     let missions = await this.missionRepository.find({ relations: ['owner'] });
+    missions = missions.filter(x => x.state != 2);
     if (owner) {
       missions = missions.filter(x => x.owner.username == owner);
     }
@@ -270,13 +272,13 @@ export class MissionService {
   }
 
   async updateApplication(applicationId: string, description: string) {
-    let orderReq = await this.applicationRepository.findOne({
+    let application = await this.applicationRepository.findOne({
       where: { id: applicationId },
     });
-    if (!orderReq) {
+    if (!application) {
       throw new HttpException('OrderReq do not exist', HttpStatus.BAD_REQUEST);
     }
-    if (orderReq.state != 0) {
+    if (application.state != 0) {
       throw new HttpException(
         'Application has already been handled!',
         HttpStatus.BAD_REQUEST,
@@ -286,11 +288,11 @@ export class MissionService {
       { id: applicationId },
       { description: description },
     );
-    orderReq = await this.applicationRepository.findOne({
+    application = await this.applicationRepository.findOne({
       where: { id: applicationId },
       relations: ['apUser', 'mission'],
     });
-    return orderReq.toResponseObject();
+    return application.toResponseObject();
   }
 
   async deleteApplication(applicationId: string) {
@@ -313,5 +315,18 @@ export class MissionService {
       relations: ['apUser', 'mission'],
     });
     return application.toResponseObject();
+  }
+
+  async findAp(userId, missionID) {
+    const user = await this.usersRepository.findOne({ id: userId });
+    const mission = await this.missionRepository.findOne({ id: missionID });
+    const application = await this.applicationRepository.findOne({
+      where: { apUser: user, mission: mission },
+      relations: ['apUser', 'mission'],
+    });
+    if (application) {
+      return application.toResponseObject();
+    }
+    return {};
   }
 }

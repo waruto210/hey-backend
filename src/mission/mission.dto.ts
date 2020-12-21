@@ -10,7 +10,7 @@ export class MissionDTO {
 }
 
 export class MissionRO {
-  id: string;
+  missionId: string;
   owner: UserRO;
   type: string;
   title: string;
