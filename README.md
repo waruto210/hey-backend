@@ -18,7 +18,3 @@ docker run -d -p 9000:9000 --name minio1 \
   -e "MINIO_SECRET_KEY=miniosecret" \
   minio/minio server /data
 ```
-
-## postman 请求
-
-https://www.getpostman.com/collections/7109528010e4079bae15
